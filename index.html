@@ -1,67 +1,105 @@
 <html>
   <head>
-  <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
     <style>
-      .client{
-        display: block;
-        width: 10px;
-        height: 10px;
+      body, html{
+        padding: 0px;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #color{
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 100;
       }
     </style>
     <script type="text/javascript">
-      var openSocket = function(){
-        return new WebSocket("ws://" + window.location.host + "/socket");
-      };
+      $(document).ready(function(){
+        var openSocket = function(){
+          return new WebSocket("ws://" + window.location.host + "/socket");
+        };
 
-      var socket = openSocket();
+        var socket = openSocket();
 
-      setInterval(function(){
-        if(socket.readyState == undefined || websocket.readyState > 1){
-          socket = openSocket();
+        var currentColor = "#000";
+
+        setInterval(function(){
+          if(socket.readyState == undefined || socket.readyState > 1){
+            socket = openSocket();
+          }
+        }, 100);
+
+        var clients = {};
+
+        var getClient = function(clientId){
+          var client = clients[clientId];
+          if(client) return client;
+
+          client = {
+            id: clientId
+          }
+
+          clients[clientId] = client;
+          return client;
+        };
+
+        var canvas = document.getElementById("canvas");
+
+        resizeCanvas = function(){
+          $(canvas).attr('height', $(document).height());
+          $(canvas).attr('width', $(document).width());
         }
-      }, 100);
 
-      var clients = {};
+        resizeCanvas();
+        $(window).resize(resizeCanvas);
 
-      var getElement = function(clientId){
-        var client = clients[clientId];
-        if(client) return client;
+        var context = canvas.getContext("2d");
 
-        var color = 'rgb('
-          + (Math.floor(Math.random() * 256)) + ','
-          + (Math.floor(Math.random() * 256)) + ','
-          + (Math.floor(Math.random() * 256))
-          + ')';
+        socket.onmessage = function(event){
+          var data = JSON.parse(event.data).data;
+          processEvent(data);
+        }
 
-        client = $("<div />");
-        client.addClass('client').appendTo("body").css({
-          backgroundColor: color
+        var processEvent = function(data){
+          var position = data.position;
+
+          if(data.drawing){
+            context.fillStyle = data.color;
+            context.fillRect(position[0], position[1], 10, 10);
+          }
+        }
+
+        socket.onopen = function(){
+          var clicking = false;
+          $(canvas).mousedown(function(){ clicking = true; });
+          $(canvas).mouseup(function(){ clicking = false; });
+
+          $(canvas).mousemove(function(event){
+            if(!event.clientY || !event.clientX) return;
+
+            var data = {
+              color: currentColor,
+              position: [event.clientX, event.clientY],
+              drawing: clicking
+            };
+
+            socket.send(JSON.stringify(data));
+            processEvent(data);
+          });
+        };
+
+        $("input#color").change(function(){
+          currentColor = $("input#color").val();
         });
-
-        clients[clientId] = client;
-        return client;
-      };
-
-      socket.onmessage = function(event){
-        var data = JSON.parse(event.data);
-        var element = getElement(data.id);
-
-        element.css({
-          position: 'absolute',
-          left: data.data[0],
-          top: data.data[1]
-        });
-      }
-
-      socket.onopen = function(){
-        $(document).mousemove(function(event){
-          if(!event.clientY || !event.clientX) return;
-
-          socket.send(JSON.stringify([event.clientX, event.clientY]));
-        });
-      };
+      });
     </script>
   </head>
   <body>
+    <canvas id="canvas"></canvas>
+    <input type="color" id="color" name="color">
   </body>
 </html>
