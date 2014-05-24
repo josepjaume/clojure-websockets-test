@@ -1,1 +1,1 @@
-web: lein with-profile production trampoline run -m hiya.core $PORT
+web: lein trampoline run -m hiya.core $PORT
