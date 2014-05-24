@@ -44,6 +44,8 @@
       }
 
       $(document).mousemove(function(event){
+        if(!event.clientY || !event.clientX) return;
+
         socket.send(JSON.stringify([event.clientX, event.clientY]));
       });
     </script>
