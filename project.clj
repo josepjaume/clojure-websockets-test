@@ -8,5 +8,6 @@
                  [http-kit "2.0.0"]
                  [ring/ring-devel "1.1.8"]
                  [compojure "1.1.5"]
-                 [ring-cors "0.1.0"]]
+                 [ring-cors "0.1.0"]
+                 [aleph "0.3.2"]]
   :main hiya.core)

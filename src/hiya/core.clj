@@ -2,7 +2,8 @@
   (:use [compojure.core :only (defroutes GET)]
         ring.util.response
         ring.middleware.cors
-        org.httpkit.server)
+        org.httpkit.server
+        aleph.http)
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.middleware.reload :as reload]
@@ -27,13 +28,11 @@
   (GET "/socket" [] ws)
   (GET "/" [] (file-response "index.html")))
 
-
 (def application (-> (handler/site routes)
                      reload/wrap-reload
                      (wrap-cors
-                      :access-control-allow-origin #".+")))
+                       :access-control-allow-origin #".+")))
 
-(defn -main [& args]
-  (let [port (Integer/parseInt
-               (or (System/getenv "PORT") "8080"))]
+(let [port (Integer/parseInt (or (System/getenv "PORT") "8080"))]
+  (defn -main [& args]
     (run-server application {:port port :join? false})))

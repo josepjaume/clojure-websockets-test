@@ -20,16 +20,12 @@
         right: 10px;
         z-index: 100;
       }
-
-      .name{
-        position: absolute;
-        z-index: 100;
-        pointer-events: none;
-        padding: 3px;
-        color: #fff;
-      }
     </style>
     <script type="text/javascript">
+      var randColor = function(){
+        return '#'+Math.floor(Math.random()*16777215).toString(16);
+      }
+
       $(document).ready(function(){
         var openSocket = function(){
           return new WebSocket("ws://" + window.location.host + "/socket");
@@ -37,8 +33,7 @@
 
         var socket = openSocket();
 
-        var currentColor = '#'+Math.floor(Math.random()*16777215).toString(16);
-        var currentName = "Fapper";
+        var currentColor = randColor();
 
         setInterval(function(){
           if(socket.readyState == undefined || socket.readyState > 1){
@@ -77,31 +72,22 @@
           processEvent(data.id, data.data);
         }
 
-        var names = {};
-        var getName = function(id){
-          var name = names[id];
-          if(name) return name;
-
-          name = $("<div />").addClass('name').appendTo('body');
-          names[id] = name;
-          return name;
-        }
-
         var processEvent = function(id, data){
+          var client = getClient(id);
+          var lastPosition = client.lastPosition;
           var position = data.position;
 
-          if(data.drawing){
-            context.fillStyle = data.color;
-            context.fillRect(position[0], position[1], 10, 10);
-
-            var name = getName(id);
-            name.html(data.name);
-            name.css({
-              left: position[0] - $(name).width() / 2,
-              top: position[1] - $(name).height() / 2,
-              backgroundColor: data.color
-            });
+          if(data.drawing && lastPosition){
+            context.beginPath();
+            context.moveTo(lastPosition[0], lastPosition[1]);
+            context.lineTo(position[0], position[1]);
+            context.lineWidth = 10;
+            context.lineCap = 'round';
+            context.strokeStyle = data.color;
+            context.stroke();
           }
+
+          client.lastPosition = position;
         }
 
         var clicking = false;
@@ -110,10 +96,9 @@
           if(!event.pageX|| !event.pageY) return;
 
           var data = {
-            color: currentColor,
+            color: getColor(),
             position: [event.pageX, event.pageY],
-            drawing: clicking,
-            name: currentName
+            drawing: clicking
           };
 
           socket.send(JSON.stringify(data));
@@ -138,15 +123,18 @@
           });
         };
 
+        var getColor = function(){
+          if($("input#rainbow").is(':checked')){
+            return randColor();
+          }else{
+            return currentColor;
+          }
+        };
+
         $("input#color").change(function(){
           currentColor = $("input#color").val();
         });
         $("input#color").val(currentColor);
-
-        $("input#name").change(function(){
-          currentName = $("input#name").val();
-        });
-        $("input#name").val(currentName);
       });
     </script>
   </head>
@@ -154,7 +142,8 @@
     <canvas id="canvas"></canvas>
     <div id="controls">
       <input type="color" id="color">
-      <input type="text" id="name">
+      <input type="checkbox" id="rainbow" name="rainbow">
+      <label for="rainbow">Rainbow</label>
     </div>
   </body>
 </html>
