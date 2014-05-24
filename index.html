@@ -3,6 +3,10 @@
   <meta name="viewport" content="initial-scale=1, maximum-scale=1">
     <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
     <style>
+      *{
+        box-sizing: border-box;
+      }
+
       body, html{
         padding: 0px;
         margin: 0;
@@ -10,11 +14,19 @@
         width: 100%;
       }
 
-      #color{
+      #controls{
         position: fixed;
         top: 10px;
         right: 10px;
         z-index: 100;
+      }
+
+      .name{
+        position: absolute;
+        z-index: 100;
+        pointer-events: none;
+        padding: 3px;
+        color: #fff;
       }
     </style>
     <script type="text/javascript">
@@ -25,7 +37,8 @@
 
         var socket = openSocket();
 
-        var currentColor = "#000";
+        var currentColor = '#'+Math.floor(Math.random()*16777215).toString(16);
+        var currentName = "Fapper";
 
         setInterval(function(){
           if(socket.readyState == undefined || socket.readyState > 1){
@@ -60,46 +73,77 @@
         var context = canvas.getContext("2d");
 
         socket.onmessage = function(event){
-          var data = JSON.parse(event.data).data;
-          processEvent(data);
+          var data = JSON.parse(event.data);
+          processEvent(data.id, data.data);
         }
 
-        var processEvent = function(data){
+        var names = {};
+        var getName = function(id){
+          var name = names[id];
+          if(name) return name;
+
+          name = $("<div />").addClass('name').appendTo('body');
+          names[id] = name;
+          return name;
+        }
+
+        var processEvent = function(id, data){
           var position = data.position;
 
           if(data.drawing){
             context.fillStyle = data.color;
             context.fillRect(position[0], position[1], 10, 10);
+
+            var name = getName(id);
+            name.html(data.name);
+            name.css({
+              left: position[0] - $(name).width() / 2,
+              top: position[1] - $(name).height() / 2,
+              backgroundColor: data.color
+            });
           }
         }
 
+        var clicking = false;
+
+        var processMouseEvent = function(event){
+          if(!event.clientY || !event.clientX) return;
+
+          var data = {
+            color: currentColor,
+            position: [event.clientX, event.clientY],
+            drawing: clicking,
+            name: currentName
+          };
+
+          socket.send(JSON.stringify(data));
+          processEvent("me", data);
+        }
+
         socket.onopen = function(){
-          var clicking = false;
           $(canvas).mousedown(function(){ clicking = true; });
           $(canvas).mouseup(function(){ clicking = false; });
-
-          $(canvas).mousemove(function(event){
-            if(!event.clientY || !event.clientX) return;
-
-            var data = {
-              color: currentColor,
-              position: [event.clientX, event.clientY],
-              drawing: clicking
-            };
-
-            socket.send(JSON.stringify(data));
-            processEvent(data);
-          });
+          $(canvas).mousemove(processMouseEvent);
+          $(canvas).mousedown(processMouseEvent);
         };
 
         $("input#color").change(function(){
           currentColor = $("input#color").val();
         });
+        $("input#color").val(currentColor);
+
+        $("input#name").change(function(){
+          currentName = $("input#name").val();
+        });
+        $("input#name").val(currentName);
       });
     </script>
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <input type="color" id="color" name="color">
+    <div id="controls">
+      <input type="color" id="color">
+      <input type="text" id="name">
+    </div>
   </body>
 </html>
