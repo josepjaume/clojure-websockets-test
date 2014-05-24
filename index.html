@@ -43,11 +43,13 @@
         });
       }
 
-      $(document).mousemove(function(event){
-        if(!event.clientY || !event.clientX) return;
+      socket.onopen = function(){
+        $(document).mousemove(function(event){
+          if(!event.clientY || !event.clientX) return;
 
-        socket.send(JSON.stringify([event.clientX, event.clientY]));
-      });
+          socket.send(JSON.stringify([event.clientX, event.clientY]));
+        });
+      };
     </script>
   </head>
   <body>
