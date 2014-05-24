@@ -1,6 +1,7 @@
 <html>
   <head>
   <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
     <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
     <style>
       *{
@@ -22,6 +23,7 @@
       }
     </style>
     <script type="text/javascript">
+
       var randColor = function(){
         return '#'+Math.floor(Math.random()*16777215).toString(16);
       }
@@ -91,19 +93,29 @@
         }
 
         var clicking = false;
+        var lastPosition;
 
-        var processMouseEvent = function(event){
+        var processMouseEvent = _.throttle(function(event){
           if(!event.pageX|| !event.pageY) return;
+          var position = [event.pageX, event.pageY];
+
+          if(lastPosition){
+            distanceX = position[0] - lastPosition[0];
+            distanceY = position[1] - lastPosition[1];
+            distance = Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
+            if(distance < 5){ return; }
+          }
 
           var data = {
             color: getColor(),
-            position: [event.pageX, event.pageY],
+            position: position,
             drawing: clicking
           };
 
+          lastPosition = position;
           socket.send(JSON.stringify(data));
           processEvent("me", data);
-        }
+        }, 25);
 
         socket.onopen = function(){
           $(document).mousedown(function(){ clicking = true; });
