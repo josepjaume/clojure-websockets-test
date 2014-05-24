@@ -9,7 +9,17 @@
       }
     </style>
     <script type="text/javascript">
-      var socket = new WebSocket("ws://" + window.location.host + "/socket");
+      var openSocket = function(){
+        return new WebSocket("ws://" + window.location.host + "/socket");
+      };
+
+      var socket = openSocket();
+
+      setInterval(function(){
+        if(socket.readyState == undefined || websocket.readyState > 1){
+          socket = openSocket();
+        }
+      }, 100);
 
       var clients = {};
 
