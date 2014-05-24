@@ -1,0 +1,53 @@
+<html>
+  <head>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
+    <style>
+      .client{
+        display: block;
+        width: 10px;
+        height: 10px;
+      }
+    </style>
+    <script type="text/javascript">
+      var socket = new WebSocket("ws://" + window.location.host + "/socket");
+
+      var clients = {};
+
+      var getElement = function(clientId){
+        var client = clients[clientId];
+        if(client) return client;
+
+        var color = 'rgb('
+          + (Math.floor(Math.random() * 256)) + ','
+          + (Math.floor(Math.random() * 256)) + ','
+          + (Math.floor(Math.random() * 256))
+          + ')';
+
+        client = $("<div />");
+        client.addClass('client').appendTo("body").css({
+          backgroundColor: color
+        });
+
+        clients[clientId] = client;
+        return client;
+      };
+
+      socket.onmessage = function(event){
+        var data = JSON.parse(event.data);
+        var element = getElement(data.id);
+
+        element.css({
+          position: 'absolute',
+          left: data.data[0],
+          top: data.data[1]
+        });
+      }
+
+      $(document).mousemove(function(event){
+        socket.send(JSON.stringify([event.clientX, event.clientY]));
+      });
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
