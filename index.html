@@ -107,11 +107,11 @@
         var clicking = false;
 
         var processMouseEvent = function(event){
-          if(!event.clientY || !event.clientX) return;
+          if(!event.pageX|| !event.pageY) return;
 
           var data = {
             color: currentColor,
-            position: [event.clientX, event.clientY],
+            position: [event.pageX, event.pageY],
             drawing: clicking,
             name: currentName
           };
@@ -121,10 +121,21 @@
         }
 
         socket.onopen = function(){
-          $(canvas).mousedown(function(){ clicking = true; });
-          $(canvas).mouseup(function(){ clicking = false; });
-          $(canvas).mousemove(processMouseEvent);
-          $(canvas).mousedown(processMouseEvent);
+          $(document).mousedown(function(){ clicking = true; });
+          $(document).mouseup(function(){ clicking = false; });
+          $(document).mousemove(processMouseEvent);
+          $(document).mousedown(processMouseEvent);
+
+          $(window).on("touchstart", function(){ clicking = true });
+          $(window).on("touchend", function(){ clicking = false });
+
+          $(document).on("touchmove", function(event){
+            var e = event.originalEvent;
+            jQuery.each(e.targetTouches, function(index, evt){
+              processMouseEvent(evt);
+            });
+            return false;
+          });
         };
 
         $("input#color").change(function(){
