@@ -1,1 +1,1 @@
-web: lein trampoline run -m hiya.core $PORT
+web: lein trampoline run -m drawback.core $PORT

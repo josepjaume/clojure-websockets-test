@@ -1,5 +1,5 @@
-(defproject hiya "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+(defproject drawback "0.1.0-SNAPSHOT"
+  :description "A drawing table"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -10,4 +10,4 @@
                  [compojure "1.1.5"]
                  [ring-cors "0.1.0"]
                  [aleph "0.3.2"]]
-  :main hiya.core)
+  :main drawback.core)
